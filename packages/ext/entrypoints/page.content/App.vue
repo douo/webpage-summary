@@ -7,9 +7,10 @@ import Summary from '@/src/components/summary/Summary.vue'
 import Toaster from '@/src/components/ui/toast/Toaster.vue'
 import { getEnableAutoBeginSummaryByActionOrContextTrigger, getEnableSummaryWindowDefault, useEnableFloatingBall } from '@/src/composables/general-config'
 import { useEnableOnceAndToggleHide } from '@/src/composables/switch-control'
+import { useExtractorConfig } from '@/src/composables/extractor-config'
 import { watchOnce } from '@vueuse/core'
 import { sleep } from 'radash'
-import { ref, useTemplateRef, VNode } from 'vue'
+import { ref, useTemplateRef, VNode, onMounted } from 'vue'
 import icon from '~/assets/16.png'
 
 const { tryEnableOrShow, isEnable: isOpenSummaryPanel, isShow, toggleShow } = useEnableOnceAndToggleHide()
@@ -29,7 +30,6 @@ async function createNewPanel() {
 
 async function closePanel(id: number) {
   panelList.value = panelList.value.filter(item => item.id !== id)
-
 }
 
 /**
@@ -73,7 +73,6 @@ function tryBeginSummary() {
         console.debug('[invokeSummary]Summary Already prepared, directly begin summary.')
         panelRef.refreshSummary()
       }
-
     })
   } else {
     console.warn('[invokeSummary]Summary not mounted.')
@@ -95,7 +94,6 @@ onMessage('invokeSummary', () => {
   // invoke begin summary 
   getEnableAutoBeginSummaryByActionOrContextTrigger().then(enabled => {
     if (!enabled) return
-
 
     if (summaryRef.value) {
       tryBeginSummary()
@@ -124,7 +122,6 @@ onMessage('addContentToChatDialog', (msg) => {
     watchOnce(summaryRef, () => {
       sleep(500).then(() => {
         summaryRef.value?.forEach(item => item?.addContentToChatDialog(content))
-
       })
     })
   }

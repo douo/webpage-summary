@@ -28,6 +28,11 @@
       </Select>
     </div>
 
+    <!-- current extractor display -->
+    <div class="rounded border px-2 py-1 text-sm text-muted-foreground flex items-center gap-1">
+      <span class="text-xs">Extractor:</span>
+      <span class="font-medium">{{ currentExtractor?.name || 'None' }}</span>
+    </div>
 
     <!-- prompt select -->
     <div class="rounded">
@@ -68,10 +73,11 @@ import { Select, SelectItem } from '@/src/components/custom-ui/select';
 import { useExtInfo } from '@/src/composables/extension';
 import { useModelConfigStorage } from '@/src/composables/model-config';
 import { usePromptConfigStorage } from '@/src/composables/prompt';
+import { useExtractorConfig } from '@/src/composables/extractor-config';
 import { ModelConfigItem } from '@/src/types/config/model';
 import { PromptConfigItem } from '@/src/types/config/prompt';
 import { SettingsIcon } from 'lucide-vue-next';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { t } from '@/src/utils/extension';
 import icon from '~/assets/16.png';
 import ModelConfigInlineItem from '../model/ModelConfigInlineItem.vue';
@@ -87,6 +93,7 @@ defineProps<{
 const { iconUrl, name } = useExtInfo()
 const { listItem, getDefaultItem } = useModelConfigStorage()
 const { listItem: listPrompt, getDefaultItem: getDefaultPrompt } = usePromptConfigStorage()
+const { getExtractorForCurrentUrl } = useExtractorConfig()
 
 const modelConfigs = ref<ModelConfigItem[]>([])
 const currentModelConfig = defineModel<ModelConfigItem | null>('current-model')
@@ -94,7 +101,7 @@ const currentModelConfig = defineModel<ModelConfigItem | null>('current-model')
 const promptConfigs = ref<PromptConfigItem[]>([])
 const currentPromptConfig = defineModel<PromptConfigItem | null>('current-prompt')
 
-
+const currentExtractor = computed(() => getExtractorForCurrentUrl.value)
 
 async function selectCurrentModel(id?: string) {
   if (!id) return
