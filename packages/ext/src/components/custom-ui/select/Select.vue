@@ -3,7 +3,7 @@
  * Prompt: 请为我封装一个Select组件
  * 简介: Select组件提供用户从列表中选择一个或多个选项的功能。
  */
-import { ref, provide, HTMLAttributes, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, provide, HTMLAttributes, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { cn } from '@/src/utils/shadcn';
 import Button from '../../ui/button/Button.vue';
 
@@ -17,7 +17,6 @@ const props = withDefaults(defineProps<SelectProps>(), {
   placeholder: '请选择'
 });
 
-
 const modelValue = defineModel<string>()
 const emit = defineEmits<{
 }>();
@@ -26,29 +25,46 @@ const isOpen = ref(false);
 const contentRef = ref<HTMLDivElement | null>(null);
 const scrollIndicator = ref<HTMLDivElement | null>(null);
 const isScrolledToBottom = ref(false);
+const selectRef = ref<HTMLDivElement | null>(null);
 
 const toggleOpen = () => {
   isOpen.value = !isOpen.value;
 };
 
 const handleSelect = (value: any) => {
-  modelValue.value = value
+  modelValue.value = value;
   isOpen.value = false;
-  // console.debug('handleSelect', value, isOpen.value)
 };
 
+const handleClickOutside = (event: MouseEvent) => {
+  if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
+    isOpen.value = false;
+  }
+};
+
+// 监听 modelValue 的变化，当值改变时关闭下拉框
+watch(modelValue, () => {
+  isOpen.value = false;
+});
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 // for SelectItem to select
-provide('select', handleSelect)
-provide('selected-value', modelValue)
-
-
+provide('select', handleSelect);
+provide('selected-value', modelValue);
+provide('is-open', isOpen);
 
 </script>
 
 <template>
-  <div :class="cn('relative text-left', props.class)">
-    <button @click="toggleOpen()"
+  <div ref="selectRef" :class="cn('relative text-left', props.class)">
+    <button @click.stop="toggleOpen()"
       class="flex bg-card  items-center justify-between rounded-md border px-1 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
       <slot name="trigger" :value="modelValue">
         <div>{{ $attrs.placeholder }}</div>
@@ -61,7 +77,6 @@ provide('selected-value', modelValue)
         </svg>
       </div>
     </button>
-
 
     <!-- dropdown list -->
     <div v-show="isOpen"

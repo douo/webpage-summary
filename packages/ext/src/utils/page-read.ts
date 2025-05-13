@@ -1,6 +1,4 @@
-import { Readability } from "@mozilla/readability";
-import { omit } from "radash";
-
+import { useExtractorConfig } from '../composables/extractor-config';
 
 /**
  * use `@mozilla/readability` to get page content
@@ -8,29 +6,16 @@ import { omit } from "radash";
  */
 
 export function simpleParseRead() {
-  const documentClone = document.cloneNode(true);
-  const _article = new Readability(documentClone as Document, {}).parse();
-  if (!_article) {
-    console.warn("article is null.")
-    return
-  }
-  _article.textContent=cleanString(_article.textContent)
-  const articleUrl = window.location.href;
-
-  return {
-    ..._article,
-    articleUrl
-  }
-  // const author = _article.byline ?? "";
-  // const authorLink = getMetaContentByProperty("article:author");
-  // const domain = window.location.hostname;
-  // console.log(articleUrl, author, authorLink, domain)
-  // console.log(_article.title)
-  // console.log(_article.content)
-  // let showText=''
+  const { getExtractorForCurrentUrl } = useExtractorConfig();
+  const extractor = getExtractorForCurrentUrl.value;
   
-}
+  if (!extractor) {
+    console.warn("No extractor found for current URL");
+    return null;
+  }
 
+  return extractor.extract(document);
+}
 
 /**
  * 将连续的\n ' '替换为单个
