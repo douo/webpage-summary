@@ -10,7 +10,7 @@
     <textarea v-model="inputText" ref="textareaRef"
       :class="cn('w-full h-12 min-h-4  rounded-md border-none text-base focus-visible:outline-none resize-none caret-current bg-transparent', props.class)"
       placeholder="Type your message here... Enter to send, Shift+Enter to insert new line." @input="adjustHeight"
-      @focusin="focusin" @focusout="focusout"></textarea>
+      @focusin="focusin" @focusout="focusout" @keydown="handleEnterPress"></textarea>
 
     <!-- Send button -->
     <Button variant="default" class="py-2 h-fit" @click="handleSubmit" :disabled="$attrs.disabled">
@@ -43,17 +43,21 @@ const textAreaRef = useTemplateRef('textareaRef')
 
 
 const handleEnterPress = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && event.shiftKey) {
-    //do nothing, will insert a newline
-
-  } else if (event.key === 'Enter' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
-    event.preventDefault()
-    handleSubmit()
+  // Stop event propagation to prevent triggering GitHub shortcuts
+  event.stopPropagation();
+  
+  if (event.key === 'Enter') {
+    if (event.shiftKey) {
+      // Shift+Enter: insert new line, do nothing (default behavior)
+    } else {
+      // Enter: send message
+      event.preventDefault();
+      handleSubmit();
+    }
   }
 }
 
 function focusin() {
-  textAreaRef.value?.addEventListener('keydown', handleEnterPress);
   isTextAreaFocus.value = true
 }
 
@@ -84,9 +88,15 @@ function appendContent(content: string) {
 }
 
 async function handleSubmit() {
+  if (!inputText.value.trim()) return;
+  
   emit('submit', inputText.value, () => {
-    inputText.value = ''
-  })
+    inputText.value = '';
+    // Reset textarea height
+    if (textAreaRef.value) {
+      textAreaRef.value.style.height = 'auto';
+    }
+  });
 }
 
 </script>
