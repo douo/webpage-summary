@@ -80,20 +80,19 @@
     @apply bg-background text-foreground;
   }
 
-  /* webpage-summary */
+  /* webpage-summary - FORCE PIXEL VALUES */
   :root {
-    /*  */
-    --webpage-summary-panel-width: 30rem;
-    --webpage-summary-panel-dialog-max-height: 30rem;
+    --webpage-summary-panel-width: 480px;
+    --webpage-summary-panel-dialog-max-height: 480px;
     --webpage-summary-panel-background: #ffffff;
-    --webpage-summary-panel-top: 4em;
-    --webpage-summary-panel-right: 4em;
+    --webpage-summary-panel-top: 64px;
+    --webpage-summary-panel-right: 64px;
     --webpage-summary-panel-bottom: unset;
     --webpage-summary-panel-left: unset;
     --webpage-summary-calc-scale: 100%;
-    /* placed in markdown.css */
-    /* --webpage-summary-markdown-font-size: inherit; */
-    /* --webpage-summary-markdown-line-height: inherit; */ 
+    /* Force pixel values for markdown */
+    --webpage-summary-markdown-font-size: 14px;
+    --webpage-summary-markdown-line-height: 20px;
   }
 }
 

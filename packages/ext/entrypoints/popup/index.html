@@ -5,9 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>__MSG_extName__</title>
     <meta name="manifest.type" content="browser_action" />
+    <style>
+      /* Reset and normalize styles for popup */
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #333;
+        background: #fff;
+        width: 320px;
+        min-height: 200px;
+      }
+
+      #app {
+        width: 320px;
+        min-height: 200px;
+        max-height: 600px;
+        overflow: hidden;
+      }
+    </style>
   </head>
-  <body >
-    <div id="app" class="min-w-fit"></div>
+  <body>
+    <div id="app"></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

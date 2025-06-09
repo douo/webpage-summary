@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极端字体测试 - 扩展组件一致性</title>
+    <style>
+        /* 极端的根字体大小设置 */
+        html {
+            font-size: 8px; /* 非常小的根字体 */
+        }
+        
+        .extreme-large {
+            font-size: 32px;
+            line-height: 2.5;
+        }
+        
+        .extreme-small {
+            font-size: 8px;
+            line-height: 1.0;
+        }
+        
+        .weird-font {
+            font-family: "Comic Sans MS", "Papyrus", fantasy;
+            font-size: 24px;
+            line-height: 3.0;
+            letter-spacing: 3px;
+        }
+        
+        .container {
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #333;
+            margin-bottom: 30px;
+            background: #f9f9f9;
+        }
+        
+        h2 {
+            color: #d00;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .test-info {
+            background: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            padding: 20px;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .dynamic-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10000;
+        }
+        
+        .control-button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .control-button:hover {
+            background: #005a8b;
+        }
+        
+        #current-root-size {
+            font-weight: bold;
+            color: #d00;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>🧪 极端字体测试页面</h1>
+        <p><strong>目的：</strong>测试扩展组件在极端字体环境下的一致性</p>
+        <p><strong>当前根字体大小：</strong> <span id="current-root-size">8px</span></p>
+        <p><strong>测试方法：</strong></p>
+        <ol>
+            <li>在每个区域使用 <kbd>Alt+S</kbd> (Mac: <kbd>Cmd+S</kbd>) 打开摘要面板</li>
+            <li>观察 SummaryHeader 的尺寸是否一致</li>
+            <li>使用右侧控制面板动态改变根字体大小</li>
+            <li>重新测试，确认组件尺寸不受影响</li>
+        </ol>
+        <p><strong>关键测试点：</strong></p>
+        <ul>
+            <li><code>px-1 py-1 gap-1</code> 的间距应该始终为 4px, 4px, 4px</li>
+            <li><code>w-6 h-6</code> 的图标应该始终为 24px × 24px</li>
+            <li>组件整体尺寸不应受页面字体影响</li>
+        </ul>
+    </div>
+
+    <div class="dynamic-controls">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px;">动态控制</h3>
+        <button class="control-button" onclick="setRootSize(8)">根字体: 8px</button>
+        <button class="control-button" onclick="setRootSize(16)">根字体: 16px</button>
+        <button class="control-button" onclick="setRootSize(24)">根字体: 24px</button>
+        <button class="control-button" onclick="setRootSize(32)">根字体: 32px</button>
+        <button class="control-button" onclick="measureExtensionComponent()">测量组件尺寸</button>
+    </div>
+
+    <div class="container extreme-small">
+        <h2>区域 1: 极小字体 (8px)</h2>
+        <div class="test-info">
+            字体大小: 8px | 行高: 1.0 | 根字体: <span class="root-size-display">8px</span>
+        </div>
+        <p>这是一个使用极小字体的测试区域。在这里打开扩展摘要面板，观察组件尺寸。</p>
+        <p>特别注意 SummaryHeader 中的间距和图标大小是否与其他区域一致。</p>
+    </div>
+
+    <div class="container extreme-large">
+        <h2>区域 2: 极大字体 (32px)</h2>
+        <div class="test-info">
+            字体大小: 32px | 行高: 2.5 | 根字体: <span class="root-size-display">8px</span>
+        </div>
+        <p>这是一个使用极大字体的测试区域。在这里打开扩展摘要面板，观察组件尺寸。</p>
+        <p>组件的 px-1, py-1, gap-1 等间距应该与区域1完全相同。</p>
+    </div>
+
+    <div class="container weird-font">
+        <h2>区域 3: 奇怪字体 (Comic Sans MS 24px)</h2>
+        <div class="test-info">
+            字体: Comic Sans MS | 大小: 24px | 字间距: 3px | 根字体: <span class="root-size-display">8px</span>
+        </div>
+        <p>这是一个使用奇怪字体和间距的测试区域。扩展组件应该保持一致的外观。</p>
+        <p>测试重点：字体族可能会继承，但尺寸和间距必须保持一致。</p>
+    </div>
+
+    <div class="container" style="font-size: 40px; line-height: 3; font-family: serif;">
+        <h2>区域 4: 超大 Serif 字体 (40px)</h2>
+        <div class="test-info" style="font-family: monospace; font-size: 12px;">
+            字体: Serif | 大小: 40px | 行高: 3.0 | 根字体: <span class="root-size-display">8px</span>
+        </div>
+        <p>最极端的测试环境。如果扩展组件在这里也能保持一致，说明修复成功。</p>
+        <p>这里的文字非常大，但扩展组件的尺寸应该与其他区域完全相同。</p>
+    </div>
+
+    <script>
+        function setRootSize(size) {
+            document.documentElement.style.fontSize = size + 'px';
+            document.getElementById('current-root-size').textContent = size + 'px';
+            
+            // 更新所有显示根字体大小的元素
+            const displays = document.querySelectorAll('.root-size-display');
+            displays.forEach(el => el.textContent = size + 'px');
+            
+            alert(`根字体大小已设置为 ${size}px\n\n请重新测试扩展组件：\n1. 使用 Alt+S 打开摘要面板\n2. 观察 SummaryHeader 尺寸是否保持一致\n3. 特别注意 px-1, py-1, gap-1 的间距`);
+        }
+        
+        function measureExtensionComponent() {
+            // 尝试查找扩展组件并测量尺寸
+            const shadowHost = document.querySelector('webpage-summary');
+            if (!shadowHost || !shadowHost.shadowRoot) {
+                alert('未找到扩展组件。请先使用 Alt+S 打开摘要面板。');
+                return;
+            }
+            
+            const shadowRoot = shadowHost.shadowRoot;
+            const header = shadowRoot.querySelector('.flex.items-center.justify-start.flex-wrap.px-1.py-1.gap-1.border');
+            
+            if (header) {
+                const rect = header.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(header);
+                
+                alert(`SummaryHeader 尺寸测量结果：\n\n` +
+                      `宽度: ${rect.width.toFixed(1)}px\n` +
+                      `高度: ${rect.height.toFixed(1)}px\n` +
+                      `padding-left: ${computedStyle.paddingLeft}\n` +
+                      `padding-top: ${computedStyle.paddingTop}\n` +
+                      `gap: ${computedStyle.gap}\n\n` +
+                      `预期值：\n` +
+                      `padding: 4px (0.25rem)\n` +
+                      `gap: 4px (0.25rem)`);
+            } else {
+                alert('未找到 SummaryHeader 组件。请确保摘要面板已打开。');
+            }
+        }
+        
+        // 页面加载时显示当前根字体大小
+        document.addEventListener('DOMContentLoaded', function() {
+            const rootSize = window.getComputedStyle(document.documentElement).fontSize;
+            document.getElementById('current-root-size').textContent = rootSize;
+            
+            const displays = document.querySelectorAll('.root-size-display');
+            displays.forEach(el => el.textContent = rootSize);
+        });
+    </script>
+</body>
+</html>

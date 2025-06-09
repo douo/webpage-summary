@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面 - 不同字体大小</title>
+    <style>
+        /* 模拟不同网站的字体设置 */
+        .site1 {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        
+        .site2 {
+            font-family: "Times New Roman", serif;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+        
+        .site3 {
+            font-family: "Courier New", monospace;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .site4 {
+            font-family: "Comic Sans MS", cursive;
+            font-size: 20px;
+            line-height: 2.0;
+        }
+        
+        .container {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .test-button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>扩展组件尺寸和字体测试页面</h1>
+        <p>这个页面用于测试浏览器扩展在不同页面字体设置下的表现。</p>
+        <p><strong>测试内容：</strong></p>
+        <ul>
+            <li><strong>Popup 测试</strong>：点击扩展图标，观察 popup 尺寸和字体一致性</li>
+            <li><strong>Content Script 测试</strong>：使用快捷键 Alt+S (Mac: Cmd+S) 打开摘要面板</li>
+        </ul>
+        <p><strong>预期效果：</strong></p>
+        <ul>
+            <li>Popup 固定宽度：320px，最小高度：200px</li>
+            <li>Content Script 组件中的 SummaryHeader 尺寸一致</li>
+            <li>特别关注 <code>flex items-center justify-start flex-wrap px-1 py-1 gap-1 border rounded-t-xl</code> 类的元素</li>
+            <li>在所有测试区域，组件尺寸应该保持一致，不受页面字体大小影响</li>
+        </ul>
+        <p><strong>当前页面根字体大小：</strong> <span id="root-font-size"></span></p>
+    </div>
+
+    <div class="container site1">
+        <h2>网站 1 - 小字体 (Arial 12px)</h2>
+        <p>这是一个使用小字体的网站示例。字体大小为 12px，行高为 1.2。</p>
+        <p>请在这个区域点击浏览器扩展图标，观察 popup 的显示效果。</p>
+        <button class="test-button">测试按钮</button>
+    </div>
+
+    <div class="container site2">
+        <h2>网站 2 - 大字体 (Times New Roman 18px)</h2>
+        <p>这是一个使用大字体的网站示例。字体大小为 18px，行高为 1.8。</p>
+        <p>请在这个区域点击浏览器扩展图标，观察 popup 的显示效果。</p>
+        <button class="test-button">测试按钮</button>
+    </div>
+
+    <div class="container site3">
+        <h2>网站 3 - 等宽字体 (Courier New 16px)</h2>
+        <p>这是一个使用等宽字体的网站示例。字体大小为 16px，行高为 1.6。</p>
+        <p>请在这个区域点击浏览器扩展图标，观察 popup 的显示效果。</p>
+        <button class="test-button">测试按钮</button>
+    </div>
+
+    <div class="container site4">
+        <h2>网站 4 - 特殊字体 (Comic Sans MS 20px)</h2>
+        <p>这是一个使用特殊字体的网站示例。字体大小为 20px，行高为 2.0。</p>
+        <p>请在这个区域点击浏览器扩展图标，观察 popup 的显示效果。</p>
+        <button class="test-button">测试按钮</button>
+    </div>
+
+    <script>
+        // 添加一些动态内容来模拟真实网站
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示当前页面的根字体大小
+            const rootFontSize = window.getComputedStyle(document.documentElement).fontSize;
+            document.getElementById('root-font-size').textContent = rootFontSize;
+
+            const buttons = document.querySelectorAll('.test-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    alert('测试按钮点击！\n\n请使用以下方式测试扩展：\n1. 点击扩展图标测试 popup\n2. 使用 Alt+S (Mac: Cmd+S) 打开摘要面板\n\n观察组件尺寸是否在不同区域保持一致。');
+                });
+            });
+
+            // 动态改变页面字体大小来测试
+            let currentSize = 16;
+            const changeButton = document.createElement('button');
+            changeButton.textContent = '动态改变页面字体大小';
+            changeButton.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 10px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;';
+            changeButton.addEventListener('click', function() {
+                currentSize = currentSize === 16 ? 20 : currentSize === 20 ? 12 : 16;
+                document.documentElement.style.fontSize = currentSize + 'px';
+                document.getElementById('root-font-size').textContent = currentSize + 'px';
+                alert('页面根字体大小已改为 ' + currentSize + 'px\n请重新测试扩展组件，观察尺寸是否保持一致。');
+            });
+            document.body.appendChild(changeButton);
+        });
+    </script>
+</body>
+</html>

@@ -50,8 +50,14 @@ export async function getShadowRootAsync(): Promise<ShadowRoot> {
 export function injectUserSettingCssVariables(cssVariableText: string) {
   const validText = filterValidCssVariableText(cssVariableText)
   injectCssIntoShadowRoot(`
-html, :host {
+/* User custom CSS variables - isolated in Shadow DOM */
+:root, html, :host {
   ${validText}
+}
+
+/* Ensure variables are available to all child elements */
+* {
+  /* Inherit custom variables from root */
 }`)
 }
 

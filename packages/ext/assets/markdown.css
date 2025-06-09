@@ -1,8 +1,13 @@
 /* Base styles for markdown */
 .markdown {
-  line-height: var(--webpage-summary-markdown-line-height, inherit);
-  font-size: var(--webpage-summary-markdown-font-size, inherit);
-  color:  var(--webpage-summary-markdown-color, inherit);
+  line-height: var(--webpage-summary-markdown-line-height, 1.5);
+  font-size: var(--webpage-summary-markdown-font-size, 14px);
+  color: var(--webpage-summary-markdown-color, #333);
+  font-family: inherit;
+  /* Reset any inherited styles that might interfere */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .markdown {
