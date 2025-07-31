@@ -1,6 +1,14 @@
 import type { Component, VNode } from 'vue'
-import type { ToastProps } from '.'
+import type { ToastRootProps } from 'radix-vue'
+import type { HTMLAttributes } from 'vue'
 import { computed, ref } from 'vue'
+
+// 直接定义 ToastProps 避免循环依赖
+interface ToastProps extends ToastRootProps {
+  class?: HTMLAttributes['class']
+  variant?: 'default' | 'destructive' | 'success' | 'warning' | null | undefined
+  onOpenChange?: ((value: boolean) => void) | undefined
+}
 
 const TOAST_LIMIT = 5
 const TOAST_REMOVE_DELAY = 1000000
