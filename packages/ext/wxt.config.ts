@@ -34,8 +34,8 @@ export default defineConfig({
     }),
     
     build: {
-      // 使用内联 sourcemap 避免 Chrome 扩展协议加载问题
-      sourcemap: configEnv.mode === 'development' ? 'inline' : false,
+      // 禁用 sourcemap 以避免 Vue SFC 重复导出问题
+      // sourcemap: configEnv.mode === 'development' ? 'inline' : false,
       rollupOptions: {
         external: (id) => {
           return (
@@ -140,6 +140,13 @@ export default defineConfig({
           ],
         },
       ],
+      content_scripts: [
+        {
+          matches: ["<all_urls>"],
+          js: ["content-scripts/page.js"],
+          css: ["content-scripts/page.css"]
+        }
+      ]
     };
   },
 });
