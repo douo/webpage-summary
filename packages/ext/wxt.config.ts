@@ -8,11 +8,34 @@ export default defineConfig({
   extensionApi: "chrome",
   modules: ["@wxt-dev/module-vue"],
   imports: false,
+  
+  // 开发模式配置 - 改善热更新体验
+  dev: {
+    // 启用自动重载扩展
+    reloadCommand: "Alt+R",
+  },
+  
   vite: (configEnv) => ({
     // Override config here, same as `defineConfig({ ... })`
     // inside vite.config.ts files
+    
+    // 开发模式特定配置
+    ...(configEnv.mode === 'development' && {
+      server: {
+        hmr: {
+          // 启用热模块替换
+          overlay: true,
+        },
+      },
+      optimizeDeps: {
+        // 预构建常用依赖，提高开发体验
+        include: ['vue', '@vueuse/core', 'eventemitter3'],
+      },
+    }),
+    
     build: {
-      sourcemap: true,
+      // 使用内联 sourcemap 避免 Chrome 扩展协议加载问题
+      sourcemap: configEnv.mode === 'development' ? 'inline' : false,
       rollupOptions: {
         external: (id) => {
           return (

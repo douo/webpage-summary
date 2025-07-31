@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMessage } from '@/messaging'
-import RightFloatingBallContainer from '@/src/components/container/RightFloatingBallContainer.vue'
+import BottomFloatingBall from '@/src/components/container/BottomFloatingBall.vue'
 import HoverCard from '@/src/components/custom-ui/HoverCard.vue'
 // import DebugPanelForContentScript from '@/src/components/debug/DebugPanelForContentScript.vue'
 import Summary from '@/src/components/summary/Summary.vue'
@@ -137,22 +137,22 @@ onMessage('addContentToChatDialog', (msg) => {
     <Summary v-if="isOpenSummaryPanel" v-for="{ id } in panelList" :key="id" v-show="isShow" ref="summaryRef"
       @minimize-panel="toggleShowWrap" @create-new-panel="createNewPanel" :close-or-hide="id === 0 ? 'hide' : 'close'"
       @close-panel="closePanel(id)" @vue:mounted="(node) => movePanelAfterMounted(node, id)"
-      class="h-fit top-[--webpage-summary-panel-top] bottom-[--webpage-summary-panel-bottom] left-[--webpage-summary-panel-left] right-[--webpage-summary-panel-right] scale-[--webpage-summary-calc-scale] origin-top-right" />
+      class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-fit w-[min(90vw,600px)] max-h-[80vh] scale-[--webpage-summary-calc-scale] shadow-2xl backdrop-blur-sm bg-white/95 rounded-xl border border-gray-200/50" />
 
 
-    <RightFloatingBallContainer v-if="enableFloatingBall" class=" scale-[--webpage-summary-calc-scale] origin-top-right"
-      :init-closed-btn-hidden="false" :storage-key="'page'">
-      <HoverCard position="left" alignment="middle">
+    <BottomFloatingBall v-if="enableFloatingBall" class="scale-[--webpage-summary-calc-scale]">
+      <HoverCard position="top" alignment="center">
         <div @click="tryEnableOrShow" :class="{ 'animate-bounce duration-500': isFloatingBallPulseAnim }"
-          class="w-fit h-fit p-1 aspect-square rounded-full border-[1px] border-purple-700">
+          class="w-fit h-fit p-1 aspect-square rounded-full border-[1px] border-purple-700/50 bg-white/80 backdrop-blur-sm">
           <img :src="icon" class="w-6 h-6 rounded select-none" draggable="false">
         </div>
         <template #custom-content>
-          <div class="absolute right-12 top-0 rounded p-1 text-nowrap bg-neutral-700 text-white"> open summary panel
+          <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2 rounded p-2 text-nowrap bg-neutral-700/90 text-white backdrop-blur-sm shadow-lg">
+            打开摘要面板
           </div>
         </template>
       </HoverCard>
-    </RightFloatingBallContainer>
+    </BottomFloatingBall>
 
 
     <!-- <DebugPanelForContentScript class="fixed border-amber-200 bg-white max-w-[min(40rem,50vw)] top-0 left-0" /> -->
