@@ -1,5 +1,16 @@
-/*
- * Encapsulate connect API of browser extension.
+/**
+ * 浏览器扩展长连接消息传递封装库
+ * 
+ * 主要功能：
+ * 1. 类型安全的消息传递接口
+ * 2. 支持流式数据传输（用于 AI 文本生成等场景）
+ * 3. 混合响应类型处理（原始值、Promise、流式数据）
+ * 4. 跨扩展上下文的可靠通信
+ * 
+ * 使用场景：
+ * - AI 流式文本生成
+ * - 大数据分块传输
+ * - 复杂异步操作的结果传递
  */
 
 import { CoreMessage } from "ai";
@@ -9,116 +20,142 @@ import { PromptConfigItem } from "./src/types/config/prompt";
 import { TokenUsage } from "./src/types/summary";
 
 /**
- * Define messages.
- * This interface defines the structure of messages that can be exchanged between different parts of the extension.
- * Each key represents a different message type, and the corresponding value is a function that defines the input and output types for that message.
+ * 消息协议定义接口
+ * 定义了扩展不同部分之间可以交换的消息结构
+ * 每个键代表不同的消息类型，对应的值是定义该消息输入和输出类型的函数签名
  */
 interface ProtocolMap {
+  /**
+   * 通过长连接进行流式文本生成
+   * 用于 AI 模型的流式响应，同时返回 token 使用统计和文本流
+   */
   streamTextViaConnect(input: {
-    messages: CoreMessage[];
-    modelConfig: ModelConfigItem;
+    messages: CoreMessage[];      // AI 对话消息列表
+    modelConfig: ModelConfigItem; // AI 模型配置
   }): {
-    tokenUsage: Promise<TokenUsage>;
-    textStream: ChunkConsumer;
+    tokenUsage: Promise<TokenUsage>; // 异步返回的 token 统计
+    textStream: ChunkConsumer;       // 流式文本数据
   };
 
-  /**for test */
+  /**
+   * 测试函数 - 演示多种返回类型的混合使用
+   * 展示如何同时返回原始值、Promise 和流式数据
+   */
   func1(input: { p1: string; p2: number; p3: boolean }): {
-    r1: string;
-    r2: Promise<string>;
-    r3: ChunkConsumer;
+    r1: string;           // 原始值
+    r2: Promise<string>;  // 异步值
+    r3: ChunkConsumer;    // 流式数据
   };
 }
 
+// 导出类型安全的消息传递函数
 export const { onConnectMessage, sendConnectMessage } = defineConnectMessage();
 
 /*
-IMPLEMETION OF defineConnectMessage 👇👇
- */
+=== defineConnectMessage 的具体实现 ===
+以下是核心实现代码，包含完整的类型系统和消息处理逻辑
+*/
 
-// Define the input type, which can be a record or any type.
+// 输入类型定义：可以是记录对象或任意类型
 type InputType = Record<string, any> | any;
 
-// Define the result type, which can be a record containing any type, Promise, or ChunkConsumer.
+// 结果类型定义：可以包含任意类型、Promise 或流式消费者的记录对象
 type ResultType = Record<string, any | Promise<any> | ChunkConsumer>;
 
-// Define the message type, which takes input and returns a result.
+// 消息类型定义：接受输入并返回结果的函数类型
 type MessageType<I extends InputType, O extends ResultType> = (input: I) => O;
 
-// Get the first parameter type of a function.
+// 获取函数第一个参数的类型
 type FirstParameter<T extends (args: any) => any> = T extends (
   args: infer P
 ) => any
   ? P
   : never;
 
-// Define the ChunkConsumer type, which includes onChunk and onComplete callbacks.
-// This type is used for handling streaming data, where onChunk is called for each chunk of data, and onComplete is called when the stream is finished.
+/**
+ * 流式数据消费者接口
+ * 用于处理流式数据，其中 onChunk 在每个数据块到达时调用，onComplete 在流结束时调用
+ */
 type ChunkConsumer = {
-  onChunk: (callback: (v: unknown) => void) => void;
-  onChunkComplete: (callback: () => void) => void;
+  onChunk: (callback: (v: unknown) => void) => void;           // 设置数据块处理回调
+  onChunkComplete: (callback: () => void) => void;            // 设置流完成回调
 };
 
-// Define the OnMessage type, which is used to register message handlers in background.js.
-// This type represents a function that registers a callback function (func) to be executed when a message with a specific key is received.
+/**
+ * 消息监听器类型（用于 background.js 中注册消息处理器）
+ * 表示注册回调函数的函数，当接收到特定键的消息时执行该回调
+ */
 type OnMessage = <T extends keyof ProtocolMap>(
   key: T,
   func: (
     input: FirstParameter<ProtocolMap[T]>,
     opt: {
-      // Callback to mark the return value types.  This allows the sender to know what types to expect for each field in the response.
+      // 标记返回值类型的回调，让发送方知道响应每个字段的期望类型
       markReturn: (param: MarkReturnValue<ReturnType<ProtocolMap[T]>>) => void;
-      // Callback to indicate the completion of the message handling.  This signals that the handler has finished processing.
+      // 指示消息处理完成的回调，表示处理器已完成处理
       complete: () => void;
-      // Callback to resolve a promise in the return value.  This is used for asynchronous responses.
+      // 解析返回值中 Promise 的回调，用于异步响应
       resolve: <K extends keyof ReturnType<ProtocolMap[T]>>(
         key: K,
         value: unknown
       ) => void;
-      // Callback to send a chunk of data. This is used for streaming responses.
+      // 发送数据块的回调，用于流式响应
       chunk: <K extends keyof ReturnType<ProtocolMap[T]>>(
         key: K,
         value: unknown
       ) => void;
-      // Callback to indicate the end of a chunked data stream.  This signals the end of a streaming response.
+      // 指示分块数据流结束的回调，表示流式响应的结束
       chunkEnd: <K extends keyof ReturnType<ProtocolMap[T]>>(key: K) => void;
+      // 错误处理回调
       error: (error: Error) => void;
     }
   ) => void
 ) => void;
 
-// Define the SendMessage type, which is used to send messages.
-// This type represents a function that sends a message with a specific key and input, and returns a promise that resolves to the response.
+/**
+ * 消息发送器类型
+ * 表示发送带有特定键和输入的消息，并返回解析为响应的 Promise 的函数
+ */
 type SendMessage = <T extends keyof ProtocolMap>(
   key: T,
   input: FirstParameter<ProtocolMap[T]>,
   opts?: {
-    onError?: (e: any) => void;
+    onError?: (e: any) => void;  // 可选的错误处理回调
   }
 ) => Promise<ReturnType<ProtocolMap[T]> & { stop: CallableFunction }>;
 
-// Define the ConnectMessage type for .postMessage()
-// This type represents the structure of messages exchanged internally between the sender and receiver.
+/**
+ * 连接消息类型（用于 .postMessage()）
+ * 表示发送方和接收方之间内部交换的消息结构
+ */
 type ConnectMessage = {
   type: "markReturn" | "resolve" | "chunk" | "chunkEnd" | "error" | "stop";
   key: string;
   value: unknown;
 };
 
-// Define the MarkReturnValue type to specify the type of each return value.
-// This type is used to indicate whether a field in the response is a raw value, a promise, or a chunked stream.
+/**
+ * 标记返回值类型
+ * 用于指示响应中的字段是原始值、Promise 还是分块流
+ */
 type MarkReturnValue<
   T extends Record<string, any> = Record<string, any>,
   K extends keyof T = keyof T
 > = {
-  type: "raw" | "promise" | "chunk";
-  key: K;
-  value?: T[K];
+  type: "raw" | "promise" | "chunk";  // 数据类型：原始值 | Promise | 流式数据
+  key: K;                             // 字段键名
+  value?: T[K];                       // 可选的值（用于原始类型）
 }[];
 
 /**
- * Defines the connect message functions.
- * @returns An object containing onConnectMessage and sendConnectMessage functions.
+ * 定义连接消息函数的核心实现
+ * 返回包含 onConnectMessage 和 sendConnectMessage 函数的对象
+ * 
+ * 这是整个消息传递系统的核心，实现了：
+ * 1. 类型安全的消息路由
+ * 2. 多种数据类型的混合处理
+ * 3. 长连接的建立和管理
+ * 4. 流式数据的分块传输
  */
 function defineConnectMessage(): {
   onConnectMessage: OnMessage;
@@ -126,15 +163,22 @@ function defineConnectMessage(): {
 } {
   return {
     /**
-     * Registers a message handler for a specific key.
-     * @param key - The message key.  This is the name of the message that the handler will respond to.
-     * @param callbackFunc - The callback function to handle the message. This function will be executed when a message with the specified key is received.
+     * 注册特定键的消息处理器（通常在 Background Script 中使用）
+     * 
+     * @param key - 消息键，这是处理器响应的消息名称
+     * @param callbackFunc - 处理消息的回调函数，当接收到指定键的消息时执行
+     * 
+     * 工作流程：
+     * 1. 监听以特定名称模式建立的连接
+     * 2. 接收第一条消息作为输入参数
+     * 3. 提供各种响应回调（原始值、Promise、流式数据）
+     * 4. 执行用户定义的处理逻辑
      */
     onConnectMessage: (key, callbackFunc) => {
       const NAME_KEY = `onConnectMessage:${key}`;
       let input = {} as any;
       browser.runtime.onConnect.addListener((port) => {
-        // Filter by NAME_KEY.  Only process connections with the correct name.
+        // 按 NAME_KEY 过滤，只处理具有正确名称的连接
         if (port.name !== NAME_KEY) return;
         let isPortDisconnect = false;
         port.onDisconnect.addListener(() => {
@@ -142,12 +186,12 @@ function defineConnectMessage(): {
           isPortDisconnect = true;
         });
         const onMessageListener = (_msg: any) => {
-          // First message is the input parameter.
+          // 第一条消息是输入参数
           input = _msg;
 
           /**
-           * Marks the return value types.
-           * @param retVal - The return value types.  This array describes the expected types of the response fields.
+           * 标记返回值类型
+           * @param retVal - 返回值类型数组，描述响应字段的期望类型
            */
           const markReturn: Parameters<typeof callbackFunc>[1]["markReturn"] = (
             retVal
@@ -156,19 +200,20 @@ function defineConnectMessage(): {
           };
 
           /**
-           * Indicates the completion of the message handling.
+           * 指示消息处理完成
+           * 关闭端口连接，清理资源
            */
           const complete: Parameters<
             typeof callbackFunc
           >[1]["complete"] = () => {
             port.disconnect();
-            // No need to removeListener for port, it's being closed.
+            // 端口关闭时无需手动移除监听器
           };
 
           /**
-           * Sends a chunk of data.
-           * @param key - The key of the chunked data.  This identifies which field the chunk belongs to.
-           * @param val - The chunk data.  This is the actual data being sent.
+           * 发送数据块
+           * @param key - 分块数据的键，标识该块属于哪个字段
+           * @param val - 块数据，正在发送的实际数据
            */
           const chunk: Parameters<typeof callbackFunc>[1]["chunk"] = (
             key,
@@ -178,8 +223,8 @@ function defineConnectMessage(): {
           };
 
           /**
-           * Indicates the end of a chunked data stream.
-           * @param key - The key of the chunked data. This identifies which stream is ending.
+           * 指示分块数据流的结束
+           * @param key - 分块数据的键，标识哪个流正在结束
            */
           const chunkEnd: Parameters<typeof callbackFunc>[1]["chunkEnd"] = (
             key
@@ -188,9 +233,9 @@ function defineConnectMessage(): {
           };
 
           /**
-           * Resolves a promise in the return value.
-           * @param key - The key of the promise. This identifies which promise to resolve.
-           * @param val - The resolved value.  This is the value the promise will resolve with.
+           * 解析返回值中的 Promise
+           * @param key - Promise 的键，标识要解析哪个 Promise
+           * @param val - 解析值，Promise 将解析为的值
            */
           const resolve: Parameters<typeof callbackFunc>[1]["resolve"] = (
             key,
@@ -199,10 +244,16 @@ function defineConnectMessage(): {
             port.postMessage({ type: "resolve", key: key, value: val });
           };
 
+          /**
+           * 错误处理
+           * @param e - 错误对象
+           */
           const error = (e: Error) => {
             if (isPortDisconnect) return;
             port.postMessage({ type: "error", key: "error", value: e });
           };
+          
+          // 执行用户定义的消息处理逻辑
           callbackFunc(input, {
             markReturn,
             complete,
@@ -217,41 +268,51 @@ function defineConnectMessage(): {
     },
 
     /**
-     * Sends a connect message.
-     * @param key - The message key. This is the name of the message to send.
-     * @param input - The input data.  This is the data to send with the message.
-     * @returns A promise that resolves to the return value of the message handler.
+     * 发送连接消息（通常在 Content Script 或其他上下文中使用）
+     * 
+     * @param key - 消息键，要发送的消息名称
+     * @param input - 输入数据，要随消息发送的数据
+     * @param opt - 可选配置，包含错误处理等选项
+     * @returns 返回解析为消息处理器返回值的 Promise
+     * 
+     * 工作流程：
+     * 1. 建立到 Background Script 的长连接
+     * 2. 发送输入数据
+     * 3. 等待响应类型标记
+     * 4. 根据类型构建相应的响应对象（原始值/Promise/流）
+     * 5. 处理后续的数据传输
      */
     sendConnectMessage: (key, input, opt) => {
       const NAME_KEY = `onConnectMessage:${key}`;
       const connectPort = browser.runtime.connect({ name: NAME_KEY });
+      
       /*
-       * Create some state containers.
-       * These variables are used to store callbacks and data related to the response.
+       * 创建状态容器
+       * 这些变量用于存储与响应相关的回调和数据
        */
-      let markReturnResolve: (v: any) => void; // Callback to resolve the main promise with the marked return values.
-      let returnValuePromiseMap: Record<string, (v: any) => void> = {}; // Map of promise keys to their resolve functions.
-      let returnValueChunkFuncMap: Record<string, (v: any) => void> = {}; // Map of chunk keys to their chunk functions.
+      let markReturnResolve: (v: any) => void; // 用标记的返回值解析主 Promise 的回调
+      let returnValuePromiseMap: Record<string, (v: any) => void> = {}; // Promise 键到其解析函数的映射
+      let returnValueChunkFuncMap: Record<string, (v: any) => void> = {}; // 块键到其块函数的映射
       let returnValueChunkCompleteFuncMap: Record<string, (v: any) => void> =
-        {}; // Map of chunk keys to their completion functions.
+        {}; // 块键到其完成函数的映射
       let onErrorHook = opt?.onError;
       const result = new Promise<any>((resolve, reject) => {
-        markReturnResolve = resolve; // Assign the resolve function to markReturnResolve.
+        markReturnResolve = resolve; // 将解析函数分配给 markReturnResolve
       });
 
       connectPort.onMessage.addListener((_msg: any, port) => {
         const msg = _msg as ConnectMessage;
         if (msg.type === "markReturn") {
-          // Handle the 'markReturn' message, which indicates the structure of the response.
+          // 处理 'markReturn' 消息，表示响应的结构
           const markReturnValue = msg.value as MarkReturnValue;
           const returnValue = {} as any;
-          // Iterate through the marked return values and construct the response object.
+          // 遍历标记的返回值并构建响应对象
           for (const v of markReturnValue) {
             if (v.type === "raw") {
-              // If the type is 'raw', directly assign the value to the corresponding key.
+              // 如果类型是 'raw'，直接将值分配给相应的键
               returnValue[v.key] = v.value;
             } else if (v.type === "promise") {
-              // If the type is 'promise', create a new promise and store its resolve function.
+              // 如果类型是 'promise'，创建新的 Promise 并存储其解析函数
               const newPromise = new Promise<typeof v.value>(
                 (resolve, reject) => {
                   returnValuePromiseMap[v.key] = resolve;
@@ -259,7 +320,7 @@ function defineConnectMessage(): {
               );
               returnValue[v.key] = newPromise;
             } else if (v.type === "chunk") {
-              // If the type is 'chunk', create a chunk processor and store its functions.
+              // 如果类型是 'chunk'，创建块处理器并存储其函数
               const { onChunk, chunk, onChunkComplete, chunkComplete } =
                 createChunkProcessor();
               returnValueChunkFuncMap[v.key] = chunk;
@@ -267,70 +328,77 @@ function defineConnectMessage(): {
               returnValue[v.key] = { onChunk, onChunkComplete };
             }
           }
-          // Resolve the main promise with the constructed return value object.
+          // 用构建的返回值对象解析主 Promise
           markReturnResolve({
             ...returnValue,
             stop: () => {
-              console.log("mannual stop port.", port.name);
+              console.log("手动停止端口连接:", port.name);
               port.disconnect();
             },
           });
         } else if (msg.type === "resolve") {
-          // Handle the 'resolve' message, which resolves a promise in the response.
+          // 处理 'resolve' 消息，解析响应中的 Promise
           returnValuePromiseMap[msg.key]!(msg.value);
         } else if (msg.type === "chunk") {
-          // Handle the 'chunk' message, which sends a chunk of data for a streaming response.
+          // 处理 'chunk' 消息，为流式响应发送数据块
           returnValueChunkFuncMap[msg.key]!(msg.value);
         } else if (msg.type === "chunkEnd") {
-          // Handle the 'chunkEnd' message, which signals the end of a chunked stream.
+          // 处理 'chunkEnd' 消息，表示分块流的结束
           returnValueChunkCompleteFuncMap[msg.key]!(msg.value);
         } else if (msg.type === "error") {
+          // 处理错误消息
           if (onErrorHook) {
             onErrorHook(msg.value);
           } else {
             throw msg.value;
           }
         } else {
-          throw new Error("Unexpected msg.type:" + msg.type);
+          throw new Error("意外的消息类型:" + msg.type);
         }
       });
 
-      // Send initial message.  This sends the input data to the message handler.
+      // 发送初始消息，将输入数据发送给消息处理器
       connectPort.postMessage(input);
 
-      return result; // Return the promise that will be resolved with the response.
+      return result; // 返回将用响应解析的 Promise
     },
   };
 }
 
 /**
- * Creates a chunk processor.
- * This function encapsulates the logic for handling chunked data streams.
- * @returns An object containing onChunk, chunk, onChunkComplete, and chunkComplete functions.
+ * 创建流式数据处理器
+ * 该函数封装了处理分块数据流的逻辑
+ * 
+ * @returns 包含 onChunk、chunk、onChunkComplete 和 chunkComplete 函数的对象
+ * 
+ * 工作原理：
+ * - 生产者（发送方）使用 chunk() 发送数据块
+ * - 消费者（接收方）使用 onChunk() 设置处理回调
+ * - 流结束时调用 chunkComplete() 触发完成回调
  */
 function createChunkProcessor() {
-  let chunkCallback: (c: any) => void = () => {};
-  let chunkCompleteCallback: () => void = () => {};
-  let isCompleted = false;
+  let chunkCallback: (c: any) => void = () => {};     // 数据块处理回调
+  let chunkCompleteCallback: () => void = () => {};   // 流完成回调
+  let isCompleted = false;                            // 完成状态标记
 
-  // Producer uses this to set the callback function.  The producer is the sender of the chunks.
+  // 生产者使用此方法设置回调函数（生产者是块的发送方）
   const onChunk = (callbackfunc: (c: any) => void) => {
     chunkCallback = callbackfunc;
   };
 
-  // Producer uses this to add chunks and trigger the callback.
+  // 生产者使用此方法添加块并触发回调
   const chunk = (data: any) => {
     if (!isCompleted) {
       chunkCallback(data);
     }
   };
 
-  // Consumer uses this to set the callback when each chunk is processed. The consumer is the receiver of the chunks.
+  // 消费者使用此方法设置处理每个块时的回调（消费者是块的接收方）
   const onChunkComplete = (callbackfunc: () => void) => {
     chunkCompleteCallback = callbackfunc;
   };
 
-  // Mark consumption as complete.
+  // 标记消费完成
   const chunkComplete = () => {
     isCompleted = true;
     chunkCompleteCallback();

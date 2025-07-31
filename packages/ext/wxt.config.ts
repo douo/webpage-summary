@@ -12,7 +12,7 @@ export default defineConfig({
     // Override config here, same as `defineConfig({ ... })`
     // inside vite.config.ts files
     build: {
-      // sourcemap: true,
+      sourcemap: true,
       rollupOptions: {
         external: (id) => {
           return (
