@@ -10,6 +10,7 @@ import Button from '../ui/button/Button.vue';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
+  tooltip?: string; // 添加提示文本
 }>();
 
 const emit = defineEmits<{
@@ -19,16 +20,21 @@ const emit = defineEmits<{
 // 关闭按钮默认隐藏，只在鼠标悬停时显示
 const isCloseBtnHidden = ref(true)
 const isClose = ref(false)
+const isTooltipVisible = ref(false) // 提示框显示状态
 
-// 鼠标悬停时显示关闭按钮
+// 鼠标悬停时显示关闭按钮和提示
 async function showCloseBtn() {
   await sleep(100)
   isCloseBtnHidden.value = false
+  if (props.tooltip) {
+    isTooltipVisible.value = true
+  }
 }
 
-// 鼠标离开时隐藏关闭按钮
+// 鼠标离开时隐藏关闭按钮和提示
 function hideCloseBtn() {
   isCloseBtnHidden.value = true
+  isTooltipVisible.value = false
 }
 
 // 关闭
@@ -55,6 +61,12 @@ function close() {
         <!-- 这里可以放一个图标 -->
       </div>
     </slot>
+    
+    <!-- 提示框 -->
+    <div v-if="isTooltipVisible && props.tooltip" 
+      class="absolute bottom-12 left-1/2 transform -translate-x-1/2 rounded p-2 text-nowrap bg-neutral-700/90 text-white backdrop-blur-sm shadow-lg">
+      {{ props.tooltip }}
+    </div>
   </div>
 </template>
 
