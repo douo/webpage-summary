@@ -3,7 +3,7 @@
  * 主要负责布局和组件组合，暂时使用现有组件
  */
 <template>
-  <DraggableContainer :class="containerClasses">
+  <StaticContainer :class="containerClasses">
     <!-- 头部 -->
     <template #header>
       <SummaryHeader
@@ -147,7 +147,7 @@
         />
       </div>
     </template>
-  </DraggableContainer>
+  </StaticContainer>
 </template>
 
 <script setup lang="ts">
@@ -157,7 +157,7 @@ import { useEnableTokenUsageView, useEnableUserChatDefault, useEnableCreateNewPa
 import { scrollToId } from '@/src/utils/document'
 import { toast } from '@/src/components/ui/toast'
 
-import DraggableContainer from '@/src/components/container/DraggableContainer.vue'
+import StaticContainer from '@/src/components/container/StaticContainer.vue'
 import SummaryHeader from '@/src/components/summary/SummaryHeader.vue'
 import SummaryDialog from '@/src/components/summary/SummaryDialog.vue'
 import MessageItem from '@/src/components/summary/MessageItem.vue'

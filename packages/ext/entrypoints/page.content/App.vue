@@ -160,27 +160,35 @@ const showDebugPanel = computed(() => {
 
     <Toaster />
 
-    <!-- 使用新的 SummaryV2 组件 -->
-    <SummaryV2 
-      v-if="isOpenSummaryPanel" 
-      v-for="{ id } in panelList" 
-      :key="id" 
-      v-show="isShow" 
-      ref="summaryRef"
-      @minimize-panel="toggleShowWrap" 
-      @create-new-panel="createNewPanel" 
-      :close-or-hide="id === 0 ? 'hide' : 'close'"
-      @close-panel="closePanel(id)" 
-      @vue:mounted="(node: any) => movePanelAfterMounted(node, id)"
-      class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-fit w-[min(90vw,600px)] max-h-[80vh] scale-[--webpage-summary-calc-scale] shadow-2xl backdrop-blur-sm bg-white/95 rounded-xl border border-gray-200/50" 
-    />
-
-
-    <BottomFloatingBall v-if="enableFloatingBall" tooltip="打开摘要面板" class="scale-[--webpage-summary-calc-scale]">
-      <div @click="tryEnableOrShow" :class="{ 'animate-bounce duration-500': isFloatingBallPulseAnim }"
+    <BottomFloatingBall
+      v-if="enableFloatingBall"
+      tooltip="打开摘要面板"
+      class="scale-[--webpage-summary-calc-scale]"
+      :is-expanded="isOpenSummaryPanel && isShow"
+      @toggle="tryEnableOrShow"
+      @close="() => { isOpenSummaryPanel.value = false; isShow.value = false; }"
+    >
+      <!-- 悬浮球内容 -->
+      <div :class="{ 'animate-bounce duration-500': isFloatingBallPulseAnim }"
         class="w-fit h-fit p-1 aspect-square rounded-full border-[1px] border-purple-700/50 bg-white/80 backdrop-blur-sm">
         <img :src="icon" class="w-6 h-6 rounded select-none" draggable="false">
       </div>
+      
+      <!-- 面板内容 -->
+      <template #panel>
+        <SummaryV2
+          v-if="isOpenSummaryPanel"
+          v-for="{ id } in panelList"
+          :key="id"
+          v-show="isShow"
+          ref="summaryRef"
+          @minimize-panel="toggleShowWrap"
+          @create-new-panel="createNewPanel"
+          :close-or-hide="id === 0 ? 'hide' : 'close'"
+          @close-panel="closePanel(id)"
+          @vue:mounted="(node: any) => movePanelAfterMounted(node, id)"
+        />
+      </template>
     </BottomFloatingBall>
 
 
